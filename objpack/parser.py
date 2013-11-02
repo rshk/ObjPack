@@ -35,7 +35,7 @@ def t_newline(t):
 
 
 def t_error(t):
-    raise TypeError("Unknown text '%s'" % (t.value,))
+    raise TypeError("Unknown text {0!r}".format(t.value,))
     # t.lexer.skip(1)
 
 
@@ -264,7 +264,7 @@ def p_object_content_attr(p):
 
 
 def p_error(p):
-    raise TypeError("Parser error! {!r}".format(p))
+    raise TypeError("Parser error! {0!r}".format(p))
 
 
 parser = yacc.yacc()
