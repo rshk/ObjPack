@@ -29,12 +29,12 @@ Ever wanted to put comments in JSON? Now you can!
 
 # This is your email address
 'email_from': 'foo@bar.baz',
-'email_password': 'spam-eggs-spam',  # hide this!
+'email_password': 'spam-eggs-spam'  # hide this!
 
 }
 ```
 
-Do you hate this kind of syntax, when using JSON as DSL?
+Do you hate this kind of syntax, when using JSON as query DSL?
 
 ```json
 {"or": [
