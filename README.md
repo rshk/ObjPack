@@ -14,6 +14,8 @@ so it should be quite obvious that it is
 Please have a look, play with it, send feedback and try to
 pinpoint bugs by writing test cases :)
 
+----------
+
 
 ## Example
 
