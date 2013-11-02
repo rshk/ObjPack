@@ -35,7 +35,7 @@ Now, it can be rewritten in a nicer way!
 ```python
 OR(
     {'cond1': 'value1'},
-    {'cond1': 'whatever})
+    {'cond1': 'whatever'})
 ```
 
 You can have objects, like this:
