@@ -159,13 +159,13 @@ def p_dict(p):
 def p_dict_content(p):
     """
     dict_content : dict_keyval
-                 | dict_keyval COMMA dict_content
+                 | dict_content COMMA dict_keyval
     """
     if len(p) == 2:
         p[0] = [p[1]]
     elif len(p) == 4:
-        p[0] = p[3] or []
-        p[0].append(p[1])
+        p[0] = p[1] or []
+        p[0].append(p[3])
 
 
 def p_dict_keyval(p):
@@ -244,13 +244,13 @@ def p_object(p):
 def p_object_content(p):
     """
     object_content : object_content_item
-                   | object_content_item COMMA object_content
+                   | object_content COMMA object_content_item
     """
     if len(p) == 2:
         p[0] = [p[1]]
     elif len(p) == 4:
-        p[0] = p[3] or []
-        p[0].append(p[1])
+        p[0] = p[1] or []
+        p[0].append(p[3])
     else:
         raise TypeError()
 
