@@ -89,3 +89,46 @@ def test_unpack_comments():
         'hello': 'world',
         'database': 'postgresql://user:pass@host/db',
     }
+
+
+def test_unpack_pseudo_html():
+    data = """
+    Html(
+        Head(
+            Title("This is a title"),
+            Link(rel='stylesheet', type='text/css', href='style.css')
+        ),
+        Body(
+            H1("The main headline"),
+            Table(
+                class="nice-table",
+                Tr(Td("One"), Td("Two"), Td("Three")),
+                Tr(Td("One2"), Td("Two2"), Td("Three2")),
+                Tr(Td("One3"), Td("Two3"), Td("Three3"))
+            )
+        )
+    )
+    """
+    obj = objpack.loads(data)
+    assert obj.name == 'Html'
+    assert len(obj.children) == 2
+    assert len(obj.attr) == 0
+
+    head = obj.children[0]
+    assert head.name == 'Head'
+    assert head.children[0].name == 'Title'
+    assert head.children[0].children[0] == 'This is a title'
+    assert head.children[1].name == 'Link'
+    assert head.children[1].attr['rel'] == 'stylesheet'
+    assert head.children[1].attr['type'] == 'text/css'
+    assert head.children[1].attr['href'] == 'style.css'
+
+    body = obj.children[1]
+    assert body.name == 'Body'
+
+    h1 = body.children[0]
+    assert h1.name == 'H1'
+
+    table = body.children[1]
+    assert table.name == 'Table'
+    assert table.attr['class'] == 'nice-table'
