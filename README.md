@@ -24,9 +24,9 @@ Ever wanted to put comments in JSON? Now you can!
 Do you hate this kind of syntax, when using JSON as DSL?
 
 ```json
-{'or': [
-    {'cond1': 'value1'},
-    {'cond1': 'whatever}
+{"or": [
+    {"cond1": "value1"},
+    {"cond1": "whatever"}
 ]}
 ```
 
