@@ -2,6 +2,9 @@
 ObjPack main package
 """
 
+# Bring Node in the main namespace
+from .node import Node
+
 
 def load(fp):
     return loads(fp.read())

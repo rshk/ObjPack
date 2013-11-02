@@ -1,7 +1,10 @@
 from ply import lex, yacc
 
+from .node import Node
 
-########## Lexer ##########
+
+## Lexer rules
+##============================================================
 
 tokens = (
     'COMMENT',
@@ -117,7 +120,8 @@ def t_NULL(t):
 lexer = lex.lex()
 
 
-########## Parser ##########
+## Parser rules
+##============================================================
 
 def p_expression(p):
     """
