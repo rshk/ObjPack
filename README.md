@@ -4,6 +4,15 @@ ObjPack is a serialization format for objects.
 It is a superset of JSON, meant to extend functionality in order
 to allow some nicer features.
 
+
+**Warning:** this thing is still very experimental and not
+fully implemented yet, so it should be obvious that it is
+**not ready to be used in production** at all.
+
+Please have a look, play with it, send feedback and try to
+pinpoint bugs by writing test cases :)
+
+
 ## Example
 
 Ever wanted to put comments in JSON? Now you can!
