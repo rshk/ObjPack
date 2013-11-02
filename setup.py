@@ -1,5 +1,5 @@
 import sys
-from pkg_resources import normalize_path
+#from pkg_resources import normalize_path
 from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
 
@@ -20,23 +20,22 @@ class PyTest(TestCommand):
     def finalize_options(self):
         TestCommand.finalize_options(self)
         self.test_args = [
-            '--ignore=build',
-            '--cov=objpack',
-            '--cov-report=term-missing',
-            '--pep8',
             '--verbose',
+            '--ignore=build',
+            #'--cov=objpack',
+            #'--cov-report=term-missing',
+            '--pep8',
             'objpack']
         self.test_suite = True
 
     def run_tests(self):
-        from pkg_resources import _namespace_packages
         import pytest
+        from pkg_resources import normalize_path, _namespace_packages
 
         # Purge modules under test from sys.modules. The test loader will
         # re-import them from the build location. Required when 2to3 is used
         # with namespace packages.
-        if sys.version_info >= (3,) and \
-                getattr(self.distribution, 'use_2to3', False):
+        if sys.version_info >= (3,) and getattr(self.distribution, 'use_2to3', False):
             module = self.test_args[-1].split('.')[0]
             if module in _namespace_packages:
                 del_modules = []
@@ -48,9 +47,14 @@ class PyTest(TestCommand):
                         del_modules.append(name)
                 map(sys.modules.__delitem__, del_modules)
 
-            ## Run on the build directory for 2to3-built code..
+            ## Run on the build directory for 2to3-built code
+            ## This will prevent the old 2.x code from being found
+            ## by py.test discovery mechanism, that apparently
+            ## ignores sys.path..
             ei_cmd = self.get_finalized_command("egg_info")
-            self.test_args = [normalize_path(ei_cmd.egg_base)]
+
+            ## Replace the module name with normalized path
+            self.test_args[-1] = normalize_path(ei_cmd.egg_base)
 
         errno = pytest.main(self.test_args)
         sys.exit(errno)
