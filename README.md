@@ -74,4 +74,4 @@ Html(
 
 ## Build status
 
-[![Build Status](https://travis-ci.org/rshk/objpack.png)](https://travis-ci.org/rshk/objpack)
+[![Build Status](https://travis-ci.org/rshk/ObjPack.png)](https://travis-ci.org/rshk/ObjPack)
