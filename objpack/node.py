@@ -12,8 +12,8 @@ class Node(object):
     def __repr__(self):
         contents = []
         for key, val in sorted(self.attr.iteritems()):
-            contents.append('{0!s}={0!r}'.format(key, val))
-        for val in self.attr:
+            contents.append('{0!s}={1!r}'.format(key, val))
+        for val in self.children:
             contents.append(repr(val))
         return "{0}({1})".format(self.name, ', '.join(contents))
 
