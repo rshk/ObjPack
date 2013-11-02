@@ -60,3 +60,7 @@ tramp
 
 # PyCharm
 /.idea
+
+# Ply
+parser.out
+parsetab.py
