@@ -4,12 +4,25 @@ The Node object
 
 
 class Node(object):
-    def __init__(self, name=None, *children, **attr):
-        self.name = name or ""
-        self.attr = attr
-        self.children = list(children)
+    object_name = None
+
+    def __init__(self, *args, **kwargs):
+        self.name = self.object_name or self.__class__.__name__
+        self.attr = kwargs
+        self.children = list(args)
+
+    @classmethod
+    def with_name(cls, *args, **kwargs):
+        args = list(args)
+        name = args.pop(0)
+        obj = cls(*args, **kwargs)
+        obj.name = name
+        return obj
 
     def __repr__(self):
+        return self.to_objpack()
+
+    def to_objpack(self):
         contents = []
         for key, val in sorted(self.attr.iteritems()):
             contents.append('{0!s}={1!r}'.format(key, val))
@@ -36,3 +49,10 @@ class Node(object):
 
     def __contains__(self, item):
         return item in self.children
+
+
+def create_node(name):
+    class CustomNode(Node):
+        pass
+    CustomNode.object_name = name
+    return CustomNode

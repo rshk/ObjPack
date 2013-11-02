@@ -214,7 +214,7 @@ def p_object(p):
            | SYMBOL LPAREN object_content RPAREN
            | SYMBOL LPAREN object_content COMMA RPAREN
     """
-    p[0] = Node(p[1])
+    p[0] = Node.with_name(p[1])
 
     if len(p) >= 5:
         # We have some content too..

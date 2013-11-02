@@ -1,7 +1,11 @@
+import json
+
 import pytest
 
 import objpack
-from objpack.parser import Node
+from objpack.node import Node, create_node
+
+from .fixtures import objects, json_objects
 
 
 def test_unpack_simple():
@@ -59,16 +63,17 @@ def test_unpack_dicts():
 
 def test_unpack_objects():
     # Fun with objects
-    assert objpack.loads("Hello()") == Node('Hello')
-    assert objpack.loads("Hello('world')") == Node('Hello', 'world')
+    Hello = create_node('Hello')
+    assert objpack.loads("Hello()") == Hello()
+    assert objpack.loads("Hello('world')") == Hello('world')
     assert objpack.loads("Hello('world', example=1)") \
-        == Node('Hello', 'world', example=1)
+        == Hello('world', example=1)
     assert objpack.loads("Hello(example=1, 'world')") \
-        == Node('Hello', 'world', example=1)
+        == Hello('world', example=1)
     assert objpack.loads("Hello(example=1)") \
-        == Node('Hello', example=1)
+        == Hello(example=1)
     assert objpack.loads("Hello(\n\texample=1\n)") \
-        == Node('Hello', example=1)
+        == Hello(example=1)
 
 
 def test_unpack_comments():
@@ -137,6 +142,8 @@ def test_unpack_pseudo_html():
 
 
 def test_unpack_trailing_commas():
+    """Extra trailing commas are allowed in objects"""
+
     assert objpack.loads("[1, 2, 3, ]") == [1, 2, 3]
     with pytest.raises(TypeError):
         objpack.loads('[1, 2, 3,,]')
@@ -145,7 +152,15 @@ def test_unpack_trailing_commas():
 
     assert objpack.loads("{'a': 'b', 'c': 'd',}") == {'a': 'b', 'c': 'd'}
 
-    assert objpack.loads("Obj('a', 'b',)") == Node('Obj', 'a', 'b')
-    assert objpack.loads("Obj(a='A', b='B',)") == Node('Obj', a='A', b='B')
+    Obj = create_node('Obj')
+    assert objpack.loads("Obj('a', 'b',)") == Obj('a', 'b')
+    assert objpack.loads("Obj(a='A', b='B',)") == Obj(a='A', b='B')
     assert objpack.loads("Obj(a='A', b='B', 'x', 'y',)") \
-        == Node('Obj', 'x', 'y', a='A', b='B')
+        == Obj('x', 'y', a='A', b='B')
+
+
+def test_unpack_json(json_objects):
+    """We should be able to properly unpack json too"""
+
+    for obj in json_objects:
+        assert objpack.loads(json.dumps(obj)) == obj

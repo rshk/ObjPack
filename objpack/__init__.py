@@ -3,7 +3,7 @@ ObjPack main package
 """
 
 # Bring Node in the main namespace
-from .node import Node
+from .node import Node, create_node
 
 
 def load(fp):
@@ -21,3 +21,9 @@ def dump(obj, fp):
 
 def dumps(obj):
     pass
+
+
+pack = dump
+packs = dumps
+unpack = load
+unpacks = loads

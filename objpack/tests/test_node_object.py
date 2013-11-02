@@ -1,20 +1,23 @@
 import pytest
 
-from objpack import Node
+from objpack import Node, create_node
 
 
 def test_node_object():
-    node = Node('Example')
+    node = Node.with_name('Example')
     assert node.name == 'Example'
     assert node.attr == {}
     assert node.children == []
-    node == Node('Example')
+    node == Node.with_name('Example')
 
-    node = Node('Example', 'one', 'two', attr='val', attr1='val1')
+    Example = create_node('Example')
+    node = Example('one', 'two', attr='val', attr1='val1')
     assert node.name == 'Example'
     assert node.attr == {'attr': 'val', 'attr1': 'val1'}
     assert node.children == ['one', 'two']
-    assert node == Node('Example', 'one', 'two', attr='val', attr1='val1')
+    assert node == Example('one', 'two', attr='val', attr1='val1')
+
+    assert Example('a', 'b') == Node.with_name('Example', 'a', 'b')
 
     assert len(node) == 2
     children = []
@@ -27,10 +30,11 @@ def test_node_object():
     # Just to test inequality..
     assert node != "Hello"
     assert node != object()
-    assert node != Node('AnotherNode')
-    assert node != Node('Example')
-    assert node != Node('Example', 'one', 'two')
-    assert node != Node('Example', attr='val', attr1='val1')
+    assert node != Node.with_name('AnotherNode')
+    Example = create_node('Example')
+    assert node != Example()
+    assert node != Example('one', 'two')
+    assert node != Example(attr='val', attr1='val1')
     assert node[0] == 'one'
     assert node[1] == 'two'
     with pytest.raises(IndexError):
