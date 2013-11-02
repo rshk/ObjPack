@@ -4,9 +4,11 @@ ObjPack is a serialization format for objects.
 It is a superset of JSON, meant to extend functionality in order
 to allow some nicer features.
 
+----------
 
-**Warning:** this thing is still very experimental and not
-fully implemented yet, so it should be obvious that it is
+**Warning:** this thing is still **very experimental** and
+**not fully implemented yet**, (eg. serialization is missing)
+so it should be quite obvious that it is
 **not ready to be used in production** at all.
 
 Please have a look, play with it, send feedback and try to
@@ -79,6 +81,16 @@ Html(
 	)
 )
 ```
+
+## TodoList (contributions welcome)
+
+* Write the serialization part (+ tests)
+* Make the Node interface more user-friendly (implement ``__getitem__`` etc.
+  to access children -- how to access attributes?)
+* Finish structuring the syntax (eg. string escapes are missing)
+* Write down some RFC about the syntax (how do you write a proper rfc?)
+* Write nice documentation about the syntax (see above)
+* Port to other languages too :)
 
 
 ## Build status
