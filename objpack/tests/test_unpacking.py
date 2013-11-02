@@ -1,3 +1,5 @@
+import pytest
+
 import objpack
 from objpack.parser import Node
 
@@ -132,3 +134,18 @@ def test_unpack_pseudo_html():
     table = body.children[1]
     assert table.name == 'Table'
     assert table.attr['class'] == 'nice-table'
+
+
+def test_unpack_trailing_commas():
+    assert objpack.loads("[1, 2, 3, ]") == [1, 2, 3]
+    with pytest.raises(TypeError):
+        objpack.loads('[1, 2, 3,,]')
+    with pytest.raises(TypeError):
+        objpack.loads('[1, 2, , 3]')
+
+    assert objpack.loads("{'a': 'b', 'c': 'd',}") == {'a': 'b', 'c': 'd'}
+
+    assert objpack.loads("Obj('a', 'b',)") == Node('Obj', 'a', 'b')
+    assert objpack.loads("Obj(a='A', b='B',)") == Node('Obj', a='A', b='B')
+    assert objpack.loads("Obj(a='A', b='B', 'x', 'y',)") \
+        == Node('Obj', 'x', 'y', a='A', b='B')

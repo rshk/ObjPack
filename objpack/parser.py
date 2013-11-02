@@ -149,10 +149,13 @@ def p_dict(p):
     """
     dict : LBRACE RBRACE
          | LBRACE dict_content RBRACE
+         | LBRACE dict_content COMMA RBRACE
     """
     if len(p) == 3:
+        # Empty dict
         p[0] = {}
-    elif len(p) == 4:
+    else:
+        # We have some content
         p[0] = dict(p[2] or [])
 
 
@@ -179,13 +182,12 @@ def p_list(p):
     """
     list : LBRACKET RBRACKET
          | LBRACKET list_content RBRACKET
+         | LBRACKET list_content COMMA RBRACKET
     """
-    if len(p) == 3:
+    if len(p) == 3:  # Empty list
         p[0] = []
-    elif len(p) == 4:
+    else:  # We have some content
         p[0] = p[2]
-    else:
-        raise TypeError()
 
 
 def p_list_content(p):
@@ -202,36 +204,16 @@ def p_list_content(p):
         assert False, "Internal error"
 
 
-class Node(object):
-    def __init__(self, name=None, *children, **attr):
-        self.name = name or ""
-        self.attr = attr
-        self.children = list(children)
-
-    def __repr__(self):
-        contents = []
-        for key, val in sorted(self.attr.iteritems()):
-            contents.append('{0!s}={0!r}'.format(key, val))
-        for val in self.attr:
-            contents.append(repr(val))
-        return "{0}({1})".format(self.name, ', '.join(contents))
-
-    def __eq__(self, other):
-        if not isinstance(other, Node):
-            return False
-        for attr in ('name', 'children', 'attr'):
-            if getattr(self, attr) != getattr(other, attr):
-                return False
-        return True
-
-
 def p_object(p):
     """
     object : SYMBOL LPAREN RPAREN
            | SYMBOL LPAREN object_content RPAREN
+           | SYMBOL LPAREN object_content COMMA RPAREN
     """
     p[0] = Node(p[1])
-    if len(p) == 5:
+
+    if len(p) >= 5:
+        # We have some content too..
         for typ, val in p[3]:
             if typ == 'attr':
                 p[0].attr[val[0]] = val[1]
@@ -282,10 +264,3 @@ def p_error(p):
 
 
 parser = yacc.yacc()
-
-
-# if __name__ == '__main__':
-#     import sys
-#     text = open(sys.argv[1], 'r').read()
-#     result = parser.parse(text, lexer=lexer)
-#     print result
