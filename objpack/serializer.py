@@ -2,46 +2,71 @@ import json
 import io
 import sys
 
+import six
+
 # todo: we don't want to rely on json serialization for this..
 
-PY3K = sys.version_info[0] == 3
+numeric_types = six.integer_types + (float,)
 
 _str_escape = {
-    '"': '\"',
-    "'": "\'",
-    '\b': '\\b',
-    '\f': '\\f',
-    '\n': '\\n',
-    '\r': '\\r',
-    '\t': '\\t',
+    '"': u'\"',
+    "'": u"\'",
+    '\b': u'\\b',
+    '\f': u'\\f',
+    '\n': u'\\n',
+    '\r': u'\\r',
+    '\t': u'\\t',
 }
 
-if PY3K:
-    numeric_types = (int, float)
-else:
-    numeric_types = (int, long, float)
+
+def _serialize_bytes(s):
+    """Serialize a "bytes" string
+
+    :param s:
+        the bytes string to be encoded
+    :return:
+        a unicode string containing the serialized string
+    """
+    # todo: if we have many non-printable characters, we
+    # can decide to base64-encode the thing..
+    # In this case, we add the B flag.
+    assert isinstance(s, six.binary_type)
+    output = six.StringIO()
+    # We just want to encode non-printable characters
+    # todo: use "special" codes when possible..
+    for char in six.iterbytes(s):
+        ch = six.int2byte(char)  # The actual character
+        if ch in _str_escape:
+            output.write(_str_escape[ch])
+        elif 32 >= char <= 126:
+            output.write(u'\\x{0:02X}'.format(char))
+        else:
+            output.write(ch.decode('utf-8'))
+    return u'b"{0}"'.format(output.getvalue())
 
 
 def _serialize_string(s):
-    if isinstance(s, unicode):
-        s = s.encode('utf-8')
-    assert isinstance(s, bytes)
+    assert isinstance(s, six.text_type)
+    output = six.StringIO()
 
-    output = io.BytesIO()
     for char in s:
-        if isinstance(char, int):  # Py3k w/ bytes
-            char, ord_char = chr(char), char
-        else:
-            ord_char = ord(char)
+        ord_char = ord(char)
 
         if char in _str_escape:
             output.write(_str_escape[char])
+
         elif ord_char < 32 or ord_char > 127:
+            # todo: we need to handle unicode properly!!
+            # how to escape non-printable unicode characters?
+            # find all the prefix + encode?
+            # but, we might want to preserve characters as well..
             output.write('\\x{0:2X}'.format(ord_char))
+
         else:
-            output.write(char.encode('utf-8'))
-    out = output.getvalue()
-    return out
+            output.write(char)
+
+    # Note: we omit the 'u' flag to be json-compatible.
+    return u'"{0}"'.format(output.getvalue())
 
 
 def serialize(obj):
@@ -55,13 +80,12 @@ def serialize(obj):
         return json.dumps(obj)
 
     ## Unicode strings are first encoded
-    if isinstance(obj, unicode):
-        # Note: we omit the 'u' flag to be json-compatible.
-        return '"{0}"'.format(_serialize_string(obj.encode('utf-8')))
+    if isinstance(obj, six.text_type):
+        return _serialize_string(obj)
 
     ## Bytes strings are serialized using json
-    if isinstance(obj, str):
-        return 'b"{0}"'.format(_serialize_string(obj))
+    if isinstance(obj, six.binary_type):
+        return _serialize_bytes(obj)
 
     ## Lists and tuples become lists
     if isinstance(obj, (tuple, list)):
