@@ -1,7 +1,10 @@
 import json
 import io
+import sys
 
 # todo: we don't want to rely on json serialization for this..
+
+PY3K = sys.version_info[0] == 3
 
 _str_escape = {
     '"': '\"',
@@ -13,24 +16,32 @@ _str_escape = {
     '\t': '\\t',
 }
 
+if PY3K:
+    numeric_types = (int, float)
+else:
+    numeric_types = (int, long, float)
+
 
 def _serialize_string(s):
-    was_unicode = isinstance(s, unicode)
-    if was_unicode:
+    if isinstance(s, unicode):
         s = s.encode('utf-8')
     assert isinstance(s, bytes)
+
     output = io.BytesIO()
     for char in s:
-        if char in _str_escape:
-            output.write(_str_escape(char))
+        if isinstance(char, int):  # Py3k w/ bytes
+            char, ord_char = chr(char), char
         else:
             ord_char = ord(char)
-            if ord_char < 32 or ord_char > 127:
-                output.write('\x{0:2X}'.format(ord_char))
-            else:
-                output.write()
-        pass
-    pass
+
+        if char in _str_escape:
+            output.write(_str_escape[char])
+        elif ord_char < 32 or ord_char > 127:
+            output.write('\\x{0:2X}'.format(ord_char))
+        else:
+            output.write(char.encode('utf-8'))
+    out = output.getvalue()
+    return out
 
 
 def serialize(obj):
@@ -40,23 +51,17 @@ def serialize(obj):
 
     ## None, boolean and numbers are json-encoded
     if (obj is None) or (obj is True) or (obj is False) \
-            or isinstance(obj, (int, long, float)):
-        return json.dumps(obj).decode('utf-8')
+            or isinstance(obj, numeric_types):
+        return json.dumps(obj)
 
     ## Unicode strings are first encoded
     if isinstance(obj, unicode):
-        # todo: we don't want to rely on json serialization..
-        return 'u' + json.dumps(obj.encode('utf-8')).decode('utf-8')
+        # Note: we omit the 'u' flag to be json-compatible.
+        return '"{0}"'.format(_serialize_string(obj.encode('utf-8')))
 
     ## Bytes strings are serialized using json
     if isinstance(obj, str):
-        enc = io.BytesIO()
-        enc.write('b"')
-        for letter in obj:
-            if letter == '"':
-                enc.write('\"')
-        enc.write('"')
-        return enc.getvalue()
+        return 'b"{0}"'.format(_serialize_string(obj))
 
     ## Lists and tuples become lists
     if isinstance(obj, (tuple, list)):

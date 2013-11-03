@@ -8,17 +8,17 @@ def json_objects():
     return [
         123,
         3.1415,
-        "Hello, world!",
+        u"Hello, world!",
         #Hello,\nworld!",  # not supported yet
         [1, 2, 3],
         True,
         False,
         None,
-        ['a', 'b', 'c'],
-        [1, 'a', ['x', 'y']],
-        {'a': 'b', 'c': 'd'},
-        {'a': [1, 2, 3], 'c': [4, 5, 6]},
-        {'a': {'1': 'A', '2': 'B'}, 'b': 'XX', 'c': 22},
+        [u'a', u'b', u'c'],
+        [1, u'a', [u'x', u'y']],
+        {u'a': u'b', u'c': u'd'},
+        {u'a': [1, 2, 3], u'c': [4, 5, 6]},
+        {u'a': {u'1': u'A', u'2': u'B'}, u'b': u'XX', u'c': 22},
     ]
 
 
