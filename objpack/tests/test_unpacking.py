@@ -33,8 +33,8 @@ def test_unpack_strings():
 
     # Test escape characters
     # note: they're not supported yet!
-    #assert objpack.loads('"This is \\n a newline"') == "This is \n a newline"
-    #assert objpack.loads('"This is \\t a tab"') == "This is \t a tab"
+    assert objpack.loads('"This is \\n a newline"') == "This is \n a newline"
+    assert objpack.loads('"This is \\t a tab"') == "This is \t a tab"
 
 
 def test_unpack_bool_null():

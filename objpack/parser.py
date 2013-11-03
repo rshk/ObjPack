@@ -1,134 +1,17 @@
-from ply import lex, yacc
+import io
 
+import ply.yacc as yacc
+
+from .lexer import tokens
 from .node import Node
 
-
-## Lexer rules
-##============================================================
-
-tokens = (
-    'COMMENT',
-    'LBRACE',
-    'RBRACE',
-    'LBRACKET',
-    'RBRACKET',
-    'LPAREN',
-    'RPAREN',
-    'EQUAL',
-    'STRING',
-    'COLON',
-    'COMMA',
-    'FLOAT',
-    'INTEGER',
-    'TRUE',
-    'FALSE',
-    'NULL',
-    'SYMBOL',
-)
-
-t_ignore = " \t"
-
-
-def t_newline(t):
-    r'\n+'
-    t.lexer.lineno += t.value.count("\n")
-
-
-def t_error(t):
-    raise TypeError("Unknown text {0!r}".format(t.value,))
-    # t.lexer.skip(1)
-
-
-def t_COMMENT(t):
-    r'\#.*'
-    return None  # Skip token
-
-
-t_LBRACE = r'\{'
-t_RBRACE = r'\}'
-t_LBRACKET = r'\['
-t_RBRACKET = r'\]'
-t_LPAREN = r'\('
-t_RPAREN = r'\)'
-t_EQUAL = r'='
-
-#string_single = r"'([^']|\')*'"
-#string_double = r'"([^"]|\")*"'
-
-simple_escape = r"""([a-zA-Z._~!=&\^\-\\?'"])"""
-decimal_escape = r"""(\d+)"""
-hex_escape = r"(x[0-9a-fA-F]+)"
-escape_sequence = r"""(\\(""" + simple_escape + '|' + decimal_escape + '|' \
-                  + hex_escape + '))'
-
-# string literals (K&R2: A.2.6)
-string_double_char = r"""([^"\\\n]|""" + escape_sequence + ')'
-string_double = '"' + string_double_char + '*"'
-string_single_char = r"([^'\\\n]|" + escape_sequence + ")"
-string_single = "'" + string_single_char + "*'"
-
-
-@lex.TOKEN('|'.join((string_single, string_double)))
-def t_STRING(t):
-    assert t.value[0] == t.value[-1]
-    delimiter = t.value[0]
-    if delimiter in ('"', "'"):
-        t.value = t.value[1:-1]
-        t.value = t.value.replace('\\' + delimiter, delimiter)
-        # todo: process escape characters..
-        # todo: we might want to consider unicode/bytes/raw strings, ...?
-    else:
-        assert False, "Should never get here!"
-    return t
-
-
-t_COLON = r':'
-t_COMMA = r','
-t_SYMBOL = r'[a-zA-Z_][a-zA-Z0-9_]*'
-
-
-def t_FLOAT(t):
-    r'\d+\.\d+'
-    t.value = float(t.value)
-    return t
-
-
-def t_INTEGER(t):
-    r'\d+'
-    t.value = int(t.value)
-    return t
-
-
-def t_TRUE(t):
-    r'true'
-    t.value = True
-    return t
-
-
-def t_FALSE(t):
-    r'false'
-    t.value = False
-    return t
-
-
-def t_NULL(t):
-    r'null'
-    t.value = None
-    return t
-
-
-lexer = lex.lex()
-
-
-## Parser rules
-##============================================================
 
 def p_expression(p):
     """
     expression : dict
                | list
                | object
-               | unified_string
+               | string
                | FLOAT
                | INTEGER
                | TRUE
@@ -138,29 +21,124 @@ def p_expression(p):
     p[0] = p[1]
 
 
-def p_unified_string(p):
-    """
-    unified_string : STRING
-                   | unified_string STRING
-    """
-    if len(p) == 2:
-        p[0] = p[1]
-    elif len(p) == 3:
-        p[0] = p[1] + p[2]
+## Strings
+##------------------------------------------------------------
 
+def p_string(p):
+    """
+    string : unified_string
+    """
+    # todo: here we need to recompose string properly
+
+    # Each item of unified_string is a (flags, string)
+    # tuple. We need to merge all of them.
+
+    # String flags are as follows:
+
+    # b - binary string
+    # u - unicode string (default)
+    # r - raw string (do not process escapes)
+    # B - base64 encoded
+    # H - hex encoded string
+
+    ## In this first implementation we enforce flags
+    ## to be the same or to be absent on subsequent
+    ## parts.
+
+    parts = p[1]
+
+    for flags, string in parts[1:]:
+        if flags and (flags != parts[0][0]):
+            ## Flags are not empty and differ from
+            ## flags of the first piece
+            raise ValueError("Mismatching flags")
+
+    charset = None
+    encoding = None
+    raw = False
+    flags = parts[0][0]
+
+    for flag in flags:
+        if flag in 'ub':
+            if charset is not None:
+                raise ValueError("Multiple flags: 'ub'")
+            charset = flag
+        elif flag in 'BH':
+            if encoding is not None:
+                raise ValueError("Multiple flags: 'BH'")
+            encoding = flag
+        elif flag == 'r':
+            raw = True
+        # todo: else: -> what??
+
+    if charset is None:
+        charset = 'u'
+
+    def decode(part):
+        s = part[1:-1]
+
+        if charset == 'u':
+            if isinstance(s, bytes):
+                s = unicode(s, encoding='utf-8')
+        else:
+            if isinstance(s, unicode):
+                s = s.encode('utf-8')
+
+        if not raw:
+            # Apply escape replacements
+            output = io.BytesIO() if charset == 'b' else io.StringIO()
+            si = iter(s)
+            for char in si:
+                if char == '\\':
+                    nxchar = si.next()
+                    if nxchar == 'n':
+                        output.write('\n' if charset == 'b' else u'\n')
+                    elif nxchar == 'r':
+                        output.write('\r' if charset == 'b' else u'\r')
+                    elif nxchar == 't':
+                        output.write('\t' if charset == 'b' else u'\t')
+                    elif nxchar == 'b':
+                        output.write('\b' if charset == 'b' else u'\b')
+                    elif nxchar == 'f':
+                        output.write('\f' if charset == 'b' else u'\f')
+                    # todo: \0###, \x## and \u#### escapes
+                    else:
+                        output.write(nxchar)
+                else:
+                    output.write(char)
+            s = output.getvalue()
+
+        return s
+
+    glue = '' if charset == 'b' else u''
+    p[0] = glue.join(decode(x[1]) for x in parts)
+
+
+def p_unified_string(p):
+    """unified_string : STRING"""
+    p[0] = [p[1]]
+
+
+def p_unified_string_2(p):
+    """unified_string : unified_string STRING"""
+    p[0] = p[1] or []
+    p[0].append(p[2])
+
+
+## Dictionaries
+##------------------------------------------------------------
 
 def p_dict(p):
     """
-    dict : LBRACE RBRACE
-         | LBRACE dict_content RBRACE
+    dict : LBRACE dict_content RBRACE
          | LBRACE dict_content COMMA RBRACE
     """
-    if len(p) == 3:
-        # Empty dict
-        p[0] = {}
-    else:
-        # We have some content
-        p[0] = dict(p[2] or [])
+    p[0] = dict(p[2] or [])
+
+
+def p_dict_content_empty(p):
+    "dict_content :"
+    p[0] = []
 
 
 def p_dict_content(p):
@@ -168,8 +146,12 @@ def p_dict_content(p):
     dict_content : dict_keyval
                  | dict_content COMMA dict_keyval
     """
-    if len(p) == 2:
+    if len(p) == 1:
+        p[0] = []
+
+    elif len(p) == 2:
         p[0] = [p[1]]
+
     elif len(p) == 4:
         p[0] = p[1] or []
         p[0].append(p[3])
@@ -177,7 +159,9 @@ def p_dict_content(p):
 
 def p_dict_keyval(p):
     """
-    dict_keyval : STRING COLON expression
+    dict_keyval : string COLON expression
+                | INTEGER COLON expression
+                | FLOAT COLON expression
     """
     p[0] = (p[1], p[3])
 
