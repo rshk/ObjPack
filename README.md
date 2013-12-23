@@ -98,3 +98,7 @@ Html(
 ## Build status
 
 [![Build Status](https://travis-ci.org/rshk/ObjPack.png)](https://travis-ci.org/rshk/ObjPack)
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/rshk/objpack/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
